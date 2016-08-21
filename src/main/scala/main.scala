@@ -28,7 +28,8 @@ object main {
 
   def main(args: Array[String]) = {
     val sc = getSparkContext
-    val naive = new naiveBayes(sc, "s3n://eds-uga-csci8360/data/project1/X_train_vsmall.txt", "s3n://eds-uga-csci8360/data/project1/y_train_vsmall.txt")
+//    val naive = new naiveBayes(sc, "s3n://eds-uga-csci8360/data/project1/X_train_vsmall.txt", "s3n://eds-uga-csci8360/data/project1/y_train_vsmall.txt")
+    val naive = new naiveBayes(sc, "D://test.txt", "D://test1.txt")
     naive.train()
   }
 }
