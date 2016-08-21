@@ -14,8 +14,11 @@ object main {
     val conf = new SparkConf()
       .setAppName("Test")
       .setMaster("local")
-      .set("spark.executor.memory", "4g")
-    new SparkContext(conf)
+      .set("spark.executor.memory", "8g")
+    val sc = new SparkContext(conf)
+    sc.hadoopConfiguration.set("fs.s3n.awsAccessKeyId", "AKIAISHYBNDYMKIBCDUQ")
+    sc.hadoopConfiguration.set("fs.s3n.awsSecretAccessKey", "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" )
+    sc
   }
 
   /**
@@ -25,6 +28,7 @@ object main {
 
   def main(args: Array[String]) = {
     val sc = getSparkContext
-    println(sc.sparkUser)
+    val naive = new naiveBayes(sc, "s3n://eds-uga-csci8360/data/project1/X_train_vsmall.txt", "s3n://eds-uga-csci8360/data/project1/y_train_vsmall.txt")
+    naive.train()
   }
 }
