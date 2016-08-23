@@ -38,6 +38,6 @@ object main {
     naive.classify()
 //    naive.classify("D://test2.txt")
 
-    // this is test from yang 2222
+    // this is test from yang 2222 brach!!
   }
 }
