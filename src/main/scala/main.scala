@@ -17,8 +17,7 @@ object main {
       .setMaster("local[8]")
       .set("spark.executor.memory", "8g")
     val sc = new SparkContext(conf)
-    sc.hadoopConfiguration.set("fs.s3n.awsAccessKeyId", "AKIAISHYBNDYMKIBCDUQ")
-    sc.hadoopConfiguration.set("fs.s3n.awsSecretAccessKey", "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" )
+
     sc
   }
 
