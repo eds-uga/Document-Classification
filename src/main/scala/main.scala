@@ -18,6 +18,7 @@ object main {
       .set("spark.executor.memory", "8g")
     val sc = new SparkContext(conf)
 
+    // add the credentials for s3 here. Preferably in a config file :)
     sc
   }
 
