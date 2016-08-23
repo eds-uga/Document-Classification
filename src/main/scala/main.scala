@@ -14,7 +14,7 @@ object main {
   def getSparkContext: SparkContext = {
     val conf = new SparkConf()
       .setAppName("Test")
-      .setMaster("local")
+      .setMaster("local[8]")
       .set("spark.executor.memory", "8g")
     val sc = new SparkContext(conf)
     sc.hadoopConfiguration.set("fs.s3n.awsAccessKeyId", "AKIAISHYBNDYMKIBCDUQ")
@@ -30,9 +30,10 @@ object main {
 
   def main(args: Array[String]) = {
     val sc = getSparkContext
-    val naive = new naiveBayes(sc, "s3n://eds-uga-csci8360/data/project1/X_test_vsmall.txt", "s3n://eds-uga-csci8360/data/project1/y_test_vsmall.txt",
-      "s3n://eds-uga-csci8360/data/project1/X_test_vsmall.txt")
-//    val naive = new naiveBayes(sc, "D://test.txt", "D://test1.txt", "D://test2.txt")
+//    val naive = new naiveBayes(sc, "s3n://eds-uga-csci8360/data/project1/X_train_vsmall.txt", "s3n://eds-uga-csci8360/data/project1/y_train_vsmall.txt",
+//      "s3n://eds-uga-csci8360/data/project1/X_test_vsmall.txt")
+
+    val naive = new naiveBayes(sc, "D://test.txt", "D://test1.txt", "D://test2.txt")
     naive.train()
     naive.classify()
 //    naive.classify("D://test2.txt")
