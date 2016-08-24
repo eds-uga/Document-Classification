@@ -19,9 +19,10 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     * @param words Describes the document as an array of words
     * @return The target class
     */
-  def getScoreForTargetType(words: Array[Word]): TargetClass =  {
-    val results = targetClasses.map ( target => (target, words.map ( word => probabilities(target).getOrElse(word, sentinelValue)).reduceLeft[Double](_+_)))
-    results.maxBy(_._2)._1
+  def getScoreForTargetType(words: Array[Word]): (TargetClass, Double) =  {
+//    val results = targetClasses.map ( target => (target, classProbabilities(target) * math.abs(words.map ( word => probabilities(target).getOrElse(word, sentinelValue)).reduceLeft[Double](_+_))))
+    val results = targetClasses.map ( target => (target, math.log10(classProbabilities(target)) + words.map ( word => probabilities(target).getOrElse(word, sentinelValue)).reduceLeft(math.log10(_)+math.log10(_))))
+    results.maxBy(_._2)
   }
 
   /**
@@ -31,7 +32,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
   {
     testData.foreach ( document => {
       val words = document.split(" ").map(Word(_))
-      println(getScoreForTargetType(words).value)
+      println(getScoreForTargetType(words)._1)
     })
   }
 
@@ -99,8 +100,8 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
   val termDocsRdd = sc.textFile(x)
   val vocabulary = termDocsRdd.flatMap(y => y.split(" ")).map(Word(_)).distinct().collect()
   val sentinelValue = 1.0/vocabulary.size.toDouble
-  val xStream = sc.textFile(x)
-  val yStream = sc.textFile(y)
+  val xStream = sc.textFile(x, 16)
+  val yStream = sc.textFile(y, 16)
   val testStream = sc.textFile(testInput)
   var testData = for (xs <- testStream) yield xs
   var rawData = for ((xs, ys) <- xStream zip yStream)  yield new Tuple2(xs, ys)
