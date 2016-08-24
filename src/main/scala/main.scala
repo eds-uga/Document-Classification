@@ -37,5 +37,7 @@ object main {
     naive.train()
     naive.classify()
 //    naive.classify("D://test2.txt")
+
+    
   }
 }
