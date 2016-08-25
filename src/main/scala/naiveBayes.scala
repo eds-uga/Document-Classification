@@ -45,7 +45,10 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     */
   def train() {
 
-    stats.foreach (println)
+
+
+//    stats.foreach (println)
+//    xStream.flatMap ( x => x.split(" ")).map ( x => (x, 1)).reduceByKey(_+_).foreach (println)
 //    val initial = rawData.flatMap ( data => data._2.split(",").map ( x => (x, data._1)))
 //    initial.foreach ( println )
 //    val perClass = rawData.flatMap ( data => data._2.split(",").map ( x => (x, data._1))).reduceByKey(_+_)
@@ -75,7 +78,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     * @param target The target value that we need the document for
     * @return A hashmap where the key is Word and Value is the number of occurrences for the given Word
     */
-  def getSingleDocumentOfTarget(target: TargetClass): Map[Word, Int] = data.filter (f => f.labels.contains(target)).flatMap (w => w.wordCount).reduceByKey(_+_).collect().toMap
+  //def getSingleDocumentOfTarget(target: TargetClass): Map[Word, Int] = data.filter (f => f.labels.contains(target)).flatMap (w => w.wordCount).reduceByKey(_+_).collect().toMap
 
   /**
     * Returns the number of occurrences of a given word in the document of the given target value
@@ -96,7 +99,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     * @param target Target value that we are interested in
     * @return Returns the count of documents that are classified as target
     */
-  def getDocumentsOfTarget(target: TargetClass): Double =  data.filter (w => w.labels.contains(target)).count.toDouble               // docsj
+  //def getDocumentsOfTarget(target: TargetClass): Double =  data.filter (w => w.labels.contains(target)).count.toDouble               // docsj
 
   /**
     * Returns the probability of finding a given class based on current corpus. Does so with a simple division operation
@@ -104,7 +107,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     * @param target
     * @return
     */
-  def getClassProbability(target: TargetClass): Double = getDocumentsOfTarget(target)/data.count.toDouble         // Pvj
+  //def getClassProbability(target: TargetClass): Double = getDocumentsOfTarget(target)/data.count.toDouble         // Pvj
 
   /**
     * This method calculates the P (w|v) value where w is a word and v is a target value
@@ -113,7 +116,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     * @param targetType Target class that we are interested in
     * @return Returns a double value
     */
-  def getProbabilityOfWordInTarget(word: Word, targetType: TargetClass): Double = (getCountOfWordInDocumentType(word, targetType)+1.0)/(numberOfWordsPerDocument.getOrElse(targetType, 0.0) + vocabulary.size)  // P(wk|vj)
+  //def getProbabilityOfWordInTarget(word: Word, targetType: TargetClass): Double = (getCountOfWordInDocumentType(word, targetType)+1.0)/(numberOfWordsPerDocument.getOrElse(targetType, 0.0) + vocabulary.size)  // P(wk|vj)
   //endregion
 
 
@@ -127,17 +130,22 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
   val testStream = sc.textFile(testInput)
   var testData = for (xs <- testStream) yield xs
 
-  val rawData = xStream.zip(yStream).map ( x => (x._1, x._2)).repartition(10) //for ((xs, ys) <- xStream.repartition(10) zip yStream.repartition(10))  yield new Tuple2(xs, ys)
+  val first = xStream.zipWithIndex().map(x => (x._2, x._1))
+  val second = yStream.zipWithIndex().map ( x => (x._2, x._1))
+  val finalout = first.cogroup(second).map ( x => (x._2._1, x._2._2))
+  val finalStream =  for (x <- finalout)  yield new Tuple2(x._1.flatMap(z => z.split(" ")), x._2.flatMap ( y=> y.split(",").map(TargetClass(_))))
+//  finalStream.foreach (println)
+//  val rawData = xStream.zip(yStream)
   val targetClasses = Set(TargetClass("CCAT"), TargetClass("ECAT"), TargetClass("GCAT"), TargetClass("MCAT"))
-  val data = rawData.flatMap { line =>
-    var targetTypes = line._2.split(",").map(TargetClass(_)).toSet
+  val data = finalStream.flatMap { line =>
+    var targetTypes = line._2.toSet
     if (targetTypes.intersect(targetClasses).isEmpty)
       None
     else
     {
       try
       {
-        val wordCount = line._1.split(" ").map(Word(_)).foldLeft(Map.empty[Word, Int]) {
+        val wordCount = line._1.map(Word(_)).foldLeft(Map.empty[Word, Int]) {
           (count, word) => count + (word -> (count.getOrElse(word, 0) + 1))
         }
         Some(Document(wordCount, targetTypes.intersect(targetClasses)))
@@ -145,11 +153,14 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
         case e: NumberFormatException => None
       }
     }
-  }
+  }.map ( m => (m.labels.map ( b => (b, m.wordCount)))).flatMap ( u => u)
 
-  lazy val stats = rawData.flatMap ( data => targetClasses.intersect(data._2.split(",").map(TargetClass(_)).toSet).map ( x => (x, data._1))).reduceByKey(_+_).map (x => (x._1, x._2.split(" ").map(Word(_)).foldLeft(Map.empty[Word, Int]) {
-    (count, word) => count + (word -> (count.getOrElse(word, 0) + 1))
-  })).cache
+
+  data.foreach (println)
+
+//  lazy val stats = rawData.flatMap ( data => targetClasses.intersect(data._2.split(",").map(TargetClass(_)).toSet).map ( x => (x, data._1))).reduceByKey(_+_).map (x => (x._1, x._2.split(" ").map(Word(_)).foldLeft(Map.empty[Word, Int]) {
+//    (count, word) => count + (word -> (count.getOrElse(word, 0) + 1))
+//  })).cache
   //endregion
 }
 
