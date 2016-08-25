@@ -1,4 +1,6 @@
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
+
 import scala.collection.mutable.HashMap
 
 /**
@@ -16,25 +18,25 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
 
   /**
     * This method is passed a document as an array of words that runs Naive Bayes algorithm and returns the single target class with the highest score
+    *
     * @param words Describes the document as an array of words
     * @return The target class
     */
-  def getScoreForTargetType(words: Array[Word]): (TargetClass, Double) =  {
-//    val results = targetClasses.map ( target => (target, classProbabilities(target) * math.abs(words.map ( word => probabilities(target).getOrElse(word, sentinelValue)).reduceLeft[Double](_+_))))
-    val results = targetClasses.map ( target => (target, math.log10(classProbabilities(target)) + words.map ( word => probabilities(target).getOrElse(word, sentinelValue)).reduceLeft(math.log10(_)+math.log10(_))))
-    results.maxBy(_._2)
-  }
-
-  /**
-    * This method performs the classification for all the documents and then dump the results in an output file
-    */
-  def classify(): Unit =
-  {
-    testData.foreach ( document => {
-      val words = document.split(" ").map(Word(_))
-      println(getScoreForTargetType(words)._1)
-    })
-  }
+//  def getScoreForTargetType(words: Array[Word]): (TargetClass, Double) =  {
+//    val results = targetClasses.map ( target => (target, math.log10(classProbabilities(target)) + words.map ( word => probabilities(target).getOrElse(word, sentinelValue)).reduceLeft(math.log10(_)+math.log10(_))))
+//    results.maxBy(_._2)
+//  }
+//
+//  /**
+//    * This method performs the classification for all the documents and then dump the results in an output file
+//    */
+//  def classify(): Unit =
+//  {
+//    testData.foreach ( document => {
+//      val words = document.split(" ").map(Word(_))
+//      println(getScoreForTargetType(words)._1)
+//    })
+//  }
 
   /**
     * Primarily, this method fills up the following datastructure: HashMap [TargetClass, HashMap [Word, Double]] which essentially depicts the P(word|class) value.
@@ -42,22 +44,54 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     * In addition, it also fills up the following map: HashMap [TargetClass, Double] where we store the distinct count of words for every class type
     */
   def train() {
-    targetClasses.map ( targetType => documentPerClassType.put(targetType, getSingleDocumentOfTarget(targetType)))
-    targetClasses.map ( targetType => new DocumentLength(targetType, documentPerClassType(targetType).size)).map ( x => numberOfWordsPerDocument.put(x.target, x.length))
-    targetClasses.foreach (targetType => probabilities(targetType) = new HashMap[Word, Double])
-    targetClasses.foreach ( target => classProbabilities.put(target, getClassProbability(target)))
+//
+//    val perClass = rawData.flatMap ( data => data._2.split(",").map ( x => (x, data._1))).reduceByKey(_+_)
+//    val per = perClass.flatMap ( x => x._2.split(" ")).countByValue()
+//    per.foreach (x => println(x._1) + " " + println(x._2))
+    val initial = rawData.flatMap ( data => data._2.split(",").map ( x => (x, data._1)))
+    initial.foreach ( println )
+    val perClass = rawData.flatMap ( data => data._2.split(",").map ( x => (x, data._1))).reduceByKey(_+_)
+    perClass.foreach (println)
 
-    targetClasses.map ( target => {
-      vocabulary.map ( word => {
-        val result = getProbabilityOfWordInTarget(word, target)
-        probabilities(target).put(word, result)
-      })
-    })
+    val p = perClass.map ( per => (per._1, per._2))
+    p.foreach ( x => println(x))
+
+
+
+//    val usman2: RDD[String, String] = p.map(x => (x._1, x._2)).toMap
+    val usman = p.map (x => (x._1, x._2.split(" ").map(Word(_)).foldLeft(Map.empty[Word, Int]) {
+      (count, word) => count + (word -> (count.getOrElse(word, 0) + 1))
+    }))
+//    p.map ( line => line.split(" ").map(Word(_)).foldLeft(Map.empty[Word, Int]) {
+//      (count, word) => count + (word -> (count.getOrElse(word, 0) + 1))
+//    })
+    usman.foreach(println)
+    //perClass.flatMap ( x => x._2.split(" ").map(x => (x, 1))).reduceByKey((x, y) => x + y)
+//    perClass.foreach (println)
+//    perClass.flatMap ( x => x._2.split(" ")).countByValue().foreach (println)
+    //val per = perClass.flatMap ( per => per._2.split(" ")).countByValue().foreach ( x => println(x))
+
+//    println(per("CCAT"))
+//   perClass.foreach (per => println(per))
+//    val per = perClass.flatMap ( x => x._2.split(" ")).countByValue()
+//    per.foreach (x => println(x._1) + " " + println(x._2))
+    //    targetClasses.map ( targetType => documentPerClassType.put(targetType, getSingleDocumentOfTarget(targetType)))
+//    targetClasses.map ( targetType => new DocumentLength(targetType, documentPerClassType(targetType).size)).map ( x => numberOfWordsPerDocument.put(x.target, x.length))
+//    targetClasses.foreach (targetType => probabilities(targetType) = new HashMap[Word, Double])
+//    targetClasses.foreach ( target => classProbabilities.put(target, getClassProbability(target)))
+//
+//    targetClasses.map ( target => {
+//      vocabulary.map ( word => {
+//        val result = getProbabilityOfWordInTarget(word, target)
+//        probabilities(target).put(word, result)
+//      })
+//    })
   }
 
   //region Helper Methods
   /**
     * Returns a single document against the passed target value as a Map [Word, Int] where essentially it is a key-value pair. Key is word and Value is the number of occurrences
+    *
     * @param target The target value that we need the document for
     * @return A hashmap where the key is Word and Value is the number of occurrences for the given Word
     */
@@ -65,6 +99,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
 
   /**
     * Returns the number of occurrences of a given word in the document of the given target value
+    *
     * @param word The word that we need the count of
     * @param targetType The target class that we need the count against
     * @return Returns the count as a double value, if not found returns zero as default
@@ -73,6 +108,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
 
   /**
     * Returns the count of records that have target as the class type
+    *
     * @param target Target value that we are interested in
     * @return Returns the count of documents that are classified as target
     */
@@ -80,6 +116,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
 
   /**
     * Returns the probability of finding a given class based on current corpus. Does so with a simple division operation
+    *
     * @param target
     * @return
     */
@@ -87,6 +124,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
 
   /**
     * This method calculates the P (w|v) value where w is a word and v is a target value
+    *
     * @param word Word that we need the probability for
     * @param targetType Target class that we are interested in
     * @return Returns a double value
@@ -100,8 +138,8 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
   val termDocsRdd = sc.textFile(x)
   val vocabulary = termDocsRdd.flatMap(y => y.split(" ")).map(Word(_)).distinct().collect()
   val sentinelValue = 1.0/vocabulary.size.toDouble
-  val xStream = sc.textFile(x, 16)
-  val yStream = sc.textFile(y, 16)
+  val xStream = sc.textFile(x)
+  val yStream = sc.textFile(y)
   val testStream = sc.textFile(testInput)
   var testData = for (xs <- testStream) yield xs
   var rawData = for ((xs, ys) <- xStream zip yStream)  yield new Tuple2(xs, ys)

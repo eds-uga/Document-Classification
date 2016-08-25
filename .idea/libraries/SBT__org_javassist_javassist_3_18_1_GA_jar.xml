@@ -2,6 +2,7 @@
   <library name="SBT: org.javassist:javassist:3.18.1-GA:jar">
     <CLASSES>
       <root url="jar://D:/Play2/repository/org.javassist/javassist/3.18.1-GA/bundles/javassist.jar!/" />
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.javassist/javassist/bundles/javassist-3.18.1-GA.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>

@@ -17,6 +17,8 @@ object main {
       .setMaster("local[8]")
       .set("spark.executor.memory", "8g")
     val sc = new SparkContext(conf)
+    sc.hadoopConfiguration.set("fs.s3n.awsAccessKeyId", "AKIAISHYBNDYMKIBCDUQ")
+    sc.hadoopConfiguration.set("fs.s3n.awsSecretAccessKey", "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" )
 
     // add the credentials for s3 here. Preferably in a config file :)
     sc
@@ -30,12 +32,14 @@ object main {
 
   def main(args: Array[String]) = {
     val sc = getSparkContext
+//    sc.textFile("s3n://eds-uga-csci8360/data/project1/X_train_vsmall.txt").foreach ( x => println(x))
+
 //    val naive = new naiveBayes(sc, "s3n://eds-uga-csci8360/data/project1/X_train_vsmall.txt", "s3n://eds-uga-csci8360/data/project1/y_train_vsmall.txt",
 //      "s3n://eds-uga-csci8360/data/project1/X_test_vsmall.txt")
 
-    val naive = new naiveBayes(sc, "D://test.txt", "D://test1.txt", "D://test2.txt")
+    val naive = new naiveBayes(sc, "/Users/unisar/Desktop/input.txt", "/Users/unisar/Desktop/input2.txt", "D://test2.txt")
     naive.train()
-    naive.classify()
+//    naive.classify()
 //    naive.classify("D://test2.txt")
 
     
