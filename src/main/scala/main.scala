@@ -34,10 +34,10 @@ object main {
     val sc = getSparkContext
 //    sc.textFile("s3n://eds-uga-csci8360/data/project1/X_train_vsmall.txt").foreach ( x => println(x))
 
-//    val naive = new naiveBayes(sc, "s3n://eds-uga-csci8360/data/project1/X_train_vsmall.txt", "s3n://eds-uga-csci8360/data/project1/y_train_vsmall.txt",
-//      "s3n://eds-uga-csci8360/data/project1/X_test_vsmall.txt")
+    val naive = new naiveBayes(sc, "s3n://eds-uga-csci8360/data/project1/X_train_small.txt", "s3n://eds-uga-csci8360/data/project1/y_train_small.txt",
+      "s3n://eds-uga-csci8360/data/project1/X_test_vsmall.txt")
 
-    val naive = new naiveBayes(sc, "/Users/unisar/Desktop/input.txt", "/Users/unisar/Desktop/input2.txt", "D://test2.txt")
+//    val naive = new naiveBayes(sc, "/Users/unisar/Desktop/input.txt", "/Users/unisar/Desktop/input2.txt", "D://test2.txt")
     naive.train()
 //    naive.classify()
 //    naive.classify("D://test2.txt")
