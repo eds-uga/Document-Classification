@@ -12,7 +12,9 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     * @return The target class
     */
   def getScoreForTargetType(words: Array[String]): String =  {
-    val results = targetClasses.map ( target => (target, classProbability(target) + words.map ( word => getProbabilityOfWordInTarget(word, target)).reduceLeft(_+_)))
+    val results =
+      targetClasses.map ( target => (target, classProbability(target) +
+        words.map ( word => getProbabilityOfWordInTarget(word, target)).reduceLeft(_+_)))
     results.maxBy(_._2)._1
   }
 
@@ -30,7 +32,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     */
   def classify(): Unit =
   {
-    testData.map ( document => getScoreForTargetType(document.split("""[\s\W]""").filter (_.length>0).map(_.toLowerCase))).saveAsTextFile("Results")
+    testData.map ( document => getScoreForTargetType(document.split("""[\s\W]""").filter (_.length>0).map(_.toLowerCase))).coalesce(1,true).saveAsTextFile("/Users/yangfan/Documents/shannondata/results")
   }
 
   //region Helper Methods
