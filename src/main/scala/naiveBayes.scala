@@ -18,9 +18,8 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
 
   var finalTrainingResult: scala.collection.Map[String, Map[String, Int]] = null
   /**
-    * Primarily, this method fills up the following datastructure: HashMap [TargetClass, HashMap [Word, Double]] which essentially depicts the P(word|class) value.
-    * For every possible target value, we have the pre-calculated probabilities for all the words in the context of active corpus.
-    * In addition, it also fills up the following map: HashMap [TargetClass, Double] where we store the distinct count of words for every class type
+    * Primarily, this method fills up the following datastructure: finalTrainingResult
+    * This is a map(x1) of map(x2)[String, Int], where x1 is the class, x2 is the word and Int is the count
     */
   def train() {
       finalTrainingResult = finalval.collectAsMap()
