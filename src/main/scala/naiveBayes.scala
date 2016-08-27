@@ -12,7 +12,9 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     * @return The target class
     */
   def getScoreForTargetType(words: Array[String]): String =  {
-    val results = targetClasses.map ( target => (target, classProbability(target) + words.map ( word => getProbabilityOfWordInTarget(word, target)).reduceLeft(_+_)))
+    val results =
+      targetClasses.map ( target => (target, classProbability(target) +
+        words.map ( word => getProbabilityOfWordInTarget(word, target)).reduceLeft(_+_)))
     results.maxBy(_._2)._1
   }
 
@@ -30,7 +32,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     */
   def classify(): Unit =
   {
-    testData.map ( document => getScoreForTargetType(document.split("""[\s\W]""").filter (_.length>0).map(_.toLowerCase))).saveAsTextFile("Results")
+    testData.map ( document => getScoreForTargetType(document.split("""[\s\W]""").filter (_.length>0).map(_.toLowerCase))).coalesce(1,true).saveAsTextFile("/Users/yangfan/Documents/shannondata/results")
   }
 
   //region Helper Methods
@@ -56,10 +58,29 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
   }
   //endregion
 
+  /**
+    * This method calculates the every term in vocabulary and store in TFIDP which is in form of(TARGET,TERM,TFIDF)
+    */
+  //tf-idf
+  def getTFIDF():Unit ={
+//    val IFij = getProbabilityOfWordInTarget(word,targetType)
+    val number0fDocsInLibs = first.count()
+//    val numberOfDocsInLibsHasWord = first.filter( x=> x._2.contains(word)).count()
+//    val IDFi =math.log10( number0fDocsInLibs) -math.log10 (number0fDocsInLibs +1)
+    val TFIDF = targetClasses.map(T=> vocabulary.map( v=> (T,v,getProbabilityOfWordInTarget(v,T) + math.log10( number0fDocsInLibs) -math.log10 (first.filter( x=> x._2.contains(v)).count() +1)  ) ))
+    //println("DEBUGTFIDF"+TFIDF)
+
+  }
+
+
+
+
+
+
   //region DATA reading stuff, pretty straightforward
 
   val termDocsRdd = sc.textFile(x)
-//  val vocabulary = termDocsRdd.flatMap(y => y.split(" ")).map(Word(_)).distinct().collect()
+  val vocabulary = termDocsRdd.flatMap(y => y.split("\\s+")).distinct().collect()
   val vocabularySize = termDocsRdd.flatMap(y => y.split(" ")).distinct().count()
   val sentinelValue = 1.0/vocabularySize
   val xStream = sc.textFile(x)
@@ -71,7 +92,6 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
   val second = yStream.zipWithIndex().map ( x => (x._2, x._1))
   val finalout = first.cogroup(second).map ( x => (x._2._1, x._2._2))
   val finalStream =  for (x <- finalout)  yield new Tuple2(x._2.head, x._1.head)
-
   val targetClasses = Set("CCAT", "ECAT", "GCAT", "MCAT")
   val data = finalStream.flatMap ( x =>
   {
