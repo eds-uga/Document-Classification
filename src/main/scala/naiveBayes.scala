@@ -9,6 +9,7 @@ import scala.collection.{Map, mutable}
   * Created by UNisar on 8/20/2016.
   */
 class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) extends java.io.Serializable {
+
   /**
     * This method is passed a document as an array of words that runs Naive Bayes algorithm and returns the single target class with the highest score
     *
@@ -102,6 +103,25 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     */
   def isAllDigits(text: String) = text forall Character.isDigit
 
+  /**
+    * This method calculates the every term in vocabulary and store in TFIDP which is in form of(TARGET,TERM,TFIDF)
+    */
+  //tf-idf
+  def getTFIDF():Unit ={
+//    val IFij = getProbabilityOfWordInTarget(word,targetType)
+    val number0fDocsInLibs = first.count()
+//    val numberOfDocsInLibsHasWord = first.filter( x=> x._2.contains(word)).count()
+//    val IDFi =math.log10( number0fDocsInLibs) -math.log10 (number0fDocsInLibs +1)
+    val TFIDF = targetClasses.map(T=> vocabulary.map( v=> (T,v,getProbabilityOfWordInTarget(v,T) + math.log10( number0fDocsInLibs) -math.log10 (first.filter( x=> x._2.contains(v)).count() +1)  ) ))
+    //println("DEBUGTFIDF"+TFIDF)
+
+  }
+
+
+
+
+
+
   //region DATA reading stuff, pretty straightforward
   val stopWordList = sc.textFile("StopWordList.txt").collect.toSet
   var vocabulary = sc.textFile(x).flatMap ( x => x.split(tokenizer)).filter (_.length > 0).map ( _.toLowerCase()).distinct.collect.
@@ -161,18 +181,3 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     (combiner._1 + 1, combiner._2)
   }
 
-  /**
-    * This method merges two existing combiners
- *
-    * @param firstCombiner
-    * @param secondCombiner
-    * @return
-    */
-  def mergeCombiners(firstCombiner: (Long, mutable.Map[String, Double]), secondCombiner: (Long, mutable.Map[String, Double])) = {
-    mergeMaps(firstCombiner._2, secondCombiner._2)
-    (firstCombiner._1 + secondCombiner._1, firstCombiner._2)
-  }
-
-  def mergeMaps(output: mutable.Map[String, Double], input: mutable.Map[String, Double]) = for ((k,v) <- input) output.put(k, output.getOrElse(k, 0.toDouble) + v)
-
-}
