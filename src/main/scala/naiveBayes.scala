@@ -37,15 +37,13 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     */
   def train() {
     aggregated = corpusIterator.map(x => (x._1, x._2)).combineByKey(createCombiner, mergeValue, mergeCombiners).collectAsMap
-
     var numberOfDocuments = 0L
     aggregated.foreach(numberOfDocuments += _._2._1)
-
     // normalizing all the values
     normalizationValues = targetClasses.map(x => (x, aggregated(x)._2.maxBy(b => b._2)._2)).toMap
     totalWordsPerClass = targetClasses.map(x => (x, getTotalWords(x))).toMap
-
     targetClasses.foreach(target => classProbability.put(target, (aggregated(target)._1.toDouble / numberOfDocuments)))
+    getTfIdf();
   }
 
   /**
@@ -54,7 +52,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
   def classify(): Unit = {
     val results = testData.map(document => {
       getScoreForTargetType(document.split(tokenizer).filter(_.length > 0).filter(c => !stopWordList.contains(c)).map(_.toLowerCase).toSet.intersect(vocabulary).toArray)
-    }).coalesce(1).saveAsTextFile("8 - Path here")
+    }).coalesce(1).saveAsTextFile("/Users/yangfan/Documents/shannondata/resultone")
   }
 
   def getCountInTarget(word: String, targetType: String): Double = {
@@ -99,16 +97,49 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
   /**
     * This method calculates the every term in vocabulary and store in TFIDP which is in form of(TARGET,TERM,TFIDF)
     */
-  //tf-idf
-//  def getTFIDF(): Unit = {
-//    //    val IFij = getProbabilityOfWordInTarget(word,targetType)
-//    val number0fDocsInLibs = xStream.count
-//    //    val numberOfDocsInLibsHasWord = first.filter( x=> x._2.contains(word)).count()
-//    //    val IDFi =math.log10( number0fDocsInLibs) -math.log10 (number0fDocsInLibs +1)
-//    val TFIDF = targetClasses.map(T => vocabulary.map(v => (T, v, getProbabilityOfWordInTarget(v, T) + math.log10(number0fDocsInLibs) - math.log10(xStream.filter(x => x._2.contains(v)).count() + 1))))
-//    //println("DEBUGTFIDF"+TFIDF)
-//
-//  }
+
+  var TFIDF: Set[(String, String, Double)] =null
+  def getTfIdf(): Unit = {
+    val number0fDocsInLibs = documents.count
+    TFIDF = for (T <- targetClasses; v <- vocabulary) yield (T, v, getProbabilityOfWordInTarget(v, T) + math.log10(number0fDocsInLibs) - math.log10(documents.filter(x => x._2.contains(v)).count() + 1))
+
+  }
+
+  // TFIDF clssifier
+  def classify2(): Unit = {
+    val results = testData.map(document => {
+      getScoreForTargetType(document.split(tokenizer).filter(_.length > 0).filter(c => !stopWordList.contains(c)).map(_.toLowerCase).toSet.intersect(vocabulary).toArray)
+    }).coalesce(1).saveAsTextFile("/Users/yangfan/Documents/shannondata/result")
+  }
+  // get score for a doc in TFIDF way
+
+  /*
+   *   get weighted TfIdf for a specific Word in specific Target
+   */
+  def getSinglegetTfIdf(Target1:String,Word1:String):Double =
+  {  val SpecificTfIdf = if(TFIDF.filter(x=>x._1==Target1).filter(x=>x._2==Word1).isEmpty)  0
+  else TFIDF.filter(x=>x._1==Target1).filter(x=>x._2==Word1).map(x=>x._3).head
+    SpecificTfIdf
+  }
+
+  def getScoreForTargetType2(words: Array[String])
+  = targetClasses.map(target => (target, (classProbability.get(target) + words.map(word => getSinglegetTfIdfPos(target,word)).reduceLeft(_ + _)))).maxBy(_._2)._1
+
+  /*
+ *   get weighted TfIdf  Posibility for a specific Word in specific Target P(TfIdf/ weighted # of words in Target)
+ */
+  def getSinglegetTfIdfPos(targetType: String,word: String) :Double = (getSinglegetTfIdf(targetType,word)+1) / (getTotalWords2(targetType)) //+ vocabulary.size) // P(wk|vj)
+  // total weights of words in Target Doc in Training
+
+  /*  weighted # of words in Target
+   *
+   */
+  def getTotalWords2(targetType: String): Double = {
+    val maptemp:Map[String,Double]= aggregated.get(targetType).get._2
+    val total = {for((k,v)<-maptemp)
+      yield {(maptemp.get(k).get) * getSinglegetTfIdf(targetType,k)}}.foldLeft(0:Double){(m:Double,n:Double) => m+n}
+    total
+  }
 
 
   //region DATA reading stuff, pretty straightforward
@@ -133,8 +164,9 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     if (targetTypes.isEmpty)
       None
     else
-      targetTypes.map(b => (b, x._2.split(tokenizer).filter(_.length > 0).map(_.toLowerCase).toSet.intersect(vocabulary).toVector))
+      targetTypes.map(b => (b, x._2.split(tokenizer).filter(_.length > 0).map(_.toLowerCase).filter ( f => vocabulary.contains(f)).toVector))
   })
+
 
   /**
     * Creates a map for the passed strings
@@ -144,7 +176,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     */
   def getMap(vals: Vector[String]): mutable.Map[String, Double] = {
     var map = mutable.Map[String, Double]()
-    for (i <- vals) map.put(i, 1)
+    for (i <- vals) {map.put(i,map.getOrElse(i,0:Double)+1)}
     map
   }
 
