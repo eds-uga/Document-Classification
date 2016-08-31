@@ -133,7 +133,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     if (targetTypes.isEmpty)
       None
     else
-      targetTypes.map(b => (b, x._2.split(tokenizer).filter(_.length > 0).map(_.toLowerCase).toSet.intersect(vocabulary).toVector))
+      targetTypes.map(b => (b, x._2.split(tokenizer).filter(_.length > 0).map(_.toLowerCase).filter ( f => vocabulary.contains(f)).toVector))
   })
 
   /**
@@ -144,7 +144,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String) exte
     */
   def getMap(vals: Vector[String]): mutable.Map[String, Double] = {
     var map = mutable.Map[String, Double]()
-    for (i <- vals) map.put(i, 1)
+    for (i <- vals) map.put(i, map.getOrElse(i, 0.toDouble) + 1)
     map
   }
 
