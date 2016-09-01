@@ -13,6 +13,7 @@ Steps to get it up and running:
 # How this thing works?
 
 Following are the main steps in the run-up to classification: 
+
 1. Build the two inputs (X & Y) based on ZipIndex  
 
 2. Build the vocabulary based on X
