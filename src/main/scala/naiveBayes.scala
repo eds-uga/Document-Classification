@@ -5,24 +5,19 @@ import org.apache.spark.rdd.RDD
 
 import scala.collection.{Map, mutable}
 
-/**
-  * Created by UNisar on 8/20/2016.
-  */
 class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useTFIDF: Boolean) extends java.io.Serializable {
 
   /**
     * This method is passed a document as an array of words that runs Naive Bayes algorithm and returns the single target class with the highest score
-    *
     * @param words Describes the document as an array of words
     * @return The target class
     */
   def getScoreForTargetType(words: Array[String]) = targetClasses.map(target => (target, (math.log10(classProbability.get(target)) + words.map(word => getProbabilityOfWordInTarget(word, target)).reduceLeft(_ + _)))).maxBy(_._2)._1
 
   /**
-    * Inefficient method get the length of a given class
-    *
+    * Method get the length of a given class
     * @param targetType
-    * @return
+    * @return length
     */
   def getTotalWords(targetType: String): Double = {
     var total = 0.0
@@ -32,7 +27,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useT
   }
 
   /**
-    * Primarily, this method fills up the following datastructure: finalTrainingResult
+    * Primarily, this method fills up the following data structure: finalTrainingResult
     * This is a map(x1) of map(x2)[String, Int], where x1 is the class, x2 is the word and Int is the count
     */
   def train() {
@@ -49,6 +44,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useT
 
   var numberOfDocuments = 0L
   var wordCounts: Map[String, Int] = null
+
   /**
     * This method performs the classification for all the documents and then dump the results in an output file
     */
@@ -59,7 +55,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useT
         Some(getScoreForTargetType(words))
       else
         None
-    }).coalesce(1).saveAsTextFile("9 - tfidfcf")
+    }).coalesce(1).saveAsTextFile("")
   }
 
   def getCountInTarget(word: String, targetType: String): Double = {
@@ -106,18 +102,18 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useT
 
   /**
     * Helper method to determine if the passed string is a number
-    *
     * @param text
     * @return
     */
   def isAllDigits(text: String) = text forall Character.isDigit
 
-  //region DATA reading stuff, pretty straightforward
-  val tokenizer = """[\s\W]"""  // The tokenizer to split the strings, TODO: improve this
+  //region DATA reading stuff
+  val tokenizer = """[\s\W]"""  // The tokenizer to split the strings,
   val classProbability = new java.util.HashMap[String, Double] // This structure holds the mapping from CLASS -> P(V)
   var normalizationValues: Map[String, Double] = null
   var totalWordsPerClass: Map[String, Double] = null
   val stopWordList = sc.textFile("MergedList.txt").collect.toSet
+
   var vocabulary = sc.textFile(x).flatMap(x => x.split(tokenizer)).filter(_.length > 0).map(_.toLowerCase()).distinct.collect
       .filter(!isAllDigits(_)).filter(c => !stopWordList.contains(c)).toSet
   sc.broadcast(vocabulary)
@@ -129,6 +125,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useT
   val merger = documents.cogroup(labels).map(x => (x._2._1, x._2._2))
   val mergeIterator = for (x <- merger) yield new Tuple2(x._2.head, x._1.head)
   val targetClasses = Set("CCAT", "ECAT", "GCAT", "MCAT")
+
   val corpusIterator: RDD[(String, Vector[String])] = mergeIterator.flatMap(x => {
     val targetTypes = x._1.split(",").toSet.intersect(targetClasses)
     if (targetTypes.isEmpty)
@@ -139,7 +136,6 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useT
 
   /**
     * Creates a map for the passed strings
-    *
     * @param vals
     * @return
     */
@@ -161,7 +157,6 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useT
 
   /**
     * Creates a combiner against a new key for the main combineByKey method
-    *
     * @param values
     * @return
     */
@@ -169,7 +164,6 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useT
 
   /**
     * This method merges an entry against an existing Combiner
-    *
     * @param combiner
     * @param values
     * @return
@@ -181,7 +175,6 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useT
 
   /**
     * This method merges two existing combiners
-    *
     * @param firstCombiner
     * @param secondCombiner
     * @return
