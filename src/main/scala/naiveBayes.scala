@@ -112,7 +112,7 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useT
   val classProbability = new java.util.HashMap[String, Double] // This structure holds the mapping from CLASS -> P(V)
   var normalizationValues: Map[String, Double] = null
   var totalWordsPerClass: Map[String, Double] = null
-  val stopWordList = sc.textFile("MergedList.txt").collect.toSet
+  val stopWordList = sc.textFile("StopWordList.txt").collect.toSet
 
   var vocabulary = sc.textFile(x).flatMap(x => x.split(tokenizer)).filter(_.length > 0).map(_.toLowerCase()).distinct.collect
       .filter(!isAllDigits(_)).filter(c => !stopWordList.contains(c)).toSet
