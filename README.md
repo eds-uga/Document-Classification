@@ -21,7 +21,9 @@ Following are the main steps in the run-up to classification:
 3. Read the stop word list that is provided 
 
 4. Since, Naive Bayes needs different statistics to compute the probability, we run a sequence of transformations/actions in the training step through the whole corpus that eventually returns the following structure:
+
    Map[String, (Long, Map[String, (Double, Double)])], where the constituents are:
+   
    Map[TargetType (T), (# of docs with label T, Map[Word (W), (# of total occurrences against T in the whole corpus including duplicates against a single document, # of T docs with word W in it)])]
 
 5. Once we have the structure above along with some other auxiliary structures that hold class probabilities, we can answer every stat that NB may need. 
