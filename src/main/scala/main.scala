@@ -8,7 +8,6 @@ object main {
   /**
     * Creates a spark default context. Ideally, the configuration should be in a configuration file
     * and not hard-coded like this but just trying to get things going
-    *
     * @return SparkContext
     */
   def getSparkContext: SparkContext = {
@@ -22,15 +21,12 @@ object main {
 
   /**
     * Main method that is responsible for running the show
-    *
     * @param args Irrelevant right now
     */
 
   def main(args: Array[String]) = {
     val sc = getSparkContext
-      val naive = new naiveBayes(sc, "D:/X_train_large.txt", "D:/y_train_large.txt",
-        "D:/X_test_large.txt", false)
-
+      val naive = new naiveBayes(sc, "", "", "", false)
 
     naive.train()
     naive.classify()
