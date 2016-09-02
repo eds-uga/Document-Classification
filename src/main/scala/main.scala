@@ -27,11 +27,13 @@ object main {
   def main(args: Array[String]) = {
     val sc = getSparkContext
     try{
-      val naive = new naiveBayes(sc, args{0}, args{1}, args{2}, false)
+      println(args{0}, args{1}, args{2})
+      val naive = new naiveBayes(sc, args{0}, args{1}, args{2}, args{4}.toBoolean)
       naive.train()
-      naive.classify()
+      naive.classify(args{3})
     }catch {
-      case e: Exception => throw e
+      case e: Exception => Console.err.println("Oops..! Incorrect arguments")
+        sc.stop()
     }
   }
 }
