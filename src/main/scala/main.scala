@@ -26,11 +26,11 @@ object main {
 
   def main(args: Array[String]) = {
     val sc = getSparkContext
-    try
+    try{
       val naive = new naiveBayes(sc, args{0}, args{1}, args{2}, false)
       naive.train()
       naive.classify()
-    catch {
+    }catch {
       case e: Exception => throw e
     }
   }
