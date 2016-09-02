@@ -48,14 +48,14 @@ class naiveBayes (sc: SparkContext, x: String, y:String, testInput: String, useT
   /**
     * This method performs the classification for all the documents and then dump the results in an output file
     */
-  def classify(): Unit = {
+  def classify(filePath:String): Unit = {
     val results = testData.flatMap(document => {
       val words = document.split(tokenizer).filter(_.length > 0).filter(c => !stopWordList.contains(c)).map(_.toLowerCase).toSet.intersect(vocabulary).toArray
       if (!words.isEmpty)
         Some(getScoreForTargetType(words))
       else
         None
-    }).coalesce(1).saveAsTextFile("")
+    }).coalesce(1).saveAsTextFile(filePath)
   }
 
   def getCountInTarget(word: String, targetType: String): Double = {
