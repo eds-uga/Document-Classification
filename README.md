@@ -6,9 +6,11 @@ Team # n00bs
 
 Steps to get it up and running:
 
+0. Assuming SBT is all setup
 1. Check out the code
-2. Fix the s3 credentials (if you want to access s3) and path names in main.scala file 
-3. Fingers crossed, Run it!
+2. Run it as "run {X} {Y} {Testing_X} {Output_Path} UseTFIDF(Boolean)" 
+3. Fingers crossed!
+
 
 # How this thing works?
 
