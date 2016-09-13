@@ -7,9 +7,19 @@ Team # n00bs
 Steps to get it up and running:
 
 0. Assuming SBT is all setup
-1. Check out the code
+1. Check out the code. In case you want to access S3, add the access key/password in spark context in main file
 2. Run it as "run {X} {Y} {Testing_X} {Output_Path} UseTFIDF(Boolean)" 
 3. Fingers crossed!
+
+
+# Highlights
+
+1. Naive Bayes
+2. TF/IDF
+3. Stop word list 
+4. Used stemmer but didn't improve the results considerably
+5. Runs super-fast. If files are remote, download them and access locally. 
+
 
 
 # How this thing works?
